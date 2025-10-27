@@ -265,38 +265,75 @@ curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
     -   repeat this $K$ times to get the sample $\mathbf{s}=(s_1,\dots,s_K)$ of total times until the $100^{\mathrm{th}}$ click;\
     -   estimate the probability that the location is identified as safe and compare to the desired level $0.95$
 
-#### First, generate samples an sample means:
+#### Subtask 1 - points 1-4
 
 ```{r}
-nu1 <- 1  # change this!
-K <- 1e3
-n <- 5
-sample_means <- colMeans(matrix(rexp(n*K, rate = nu1), nrow=n))
+
+comparison <- function(nu1 = 20, K = 1e3, n = 5){
+  # First, generate samples an sample means:
+  sample_means <- colMeans(matrix(rexp(n*K, rate = nu1), nrow=n))
+  
+  # Next, calculate the parameters of the standard normal approximation
+  mu <- 1/nu1     
+  sigma <- 1/ (nu1 * sqrt(n))   
+  
+  # We can now plot ecdf and cdf
+  xlims <- c(mu-3*sigma,mu+3*sigma)
+  Fs <- ecdf(sample_means)
+  plot(Fs, 
+       xlim = xlims, 
+       col = "blue",
+       lwd = 2,
+       main = "Comparison of ecdf and cdf")
+  curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
+  return(list(sample_means = sample_means, mu = mu, sigma = sigma))
+}
+
+res <- comparison(20, 1e3, 5)
 ```
 
-#### Next, calculate the parameters of the standard normal approximation
+#### calculate the maximal difference between the two c.d.f.’s;
 
 ```{r}
-mu <- 0       # change this!
-sigma <- 1    # change this!
+
+maximal_difference <- function(samples, mean, sd){
+  normalCDF <- pnorm(sort(samples), mean = mean, sd = sd)
+  dataCDF <- ecdf(samples)(sort(samples))
+  
+  res <- max(abs(dataCDF - normalCDF))
+  return(res)
+}
+
+res_m_difference <- maximal_difference(res$sample_means, res$mu, res$sigma)
+
+cat("The maximal difference between the two cdf's for n = 5 is: ", res_m_difference)
 ```
 
-#### We can now plot ecdf and cdf
+#### Subtask 1 - point 5 - consider cases n = 5, n = 10, n = 50 and comment on the results.
+
+Case for n = 5 was considered above.
+
+##### for n = 10:
 
 ```{r}
-xlims <- c(mu-3*sigma,mu+3*sigma)
-Fs <- ecdf(sample_means)
-plot(Fs, 
-     xlim = xlims, 
-     col = "blue",
-     lwd = 2,
-     main = "Comparison of ecdf and cdf")
-curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
+res <- comparison(20, 1e3, 10)
+res_m_difference <- maximal_difference(res$sample_means, res$mu, res$sigma)
+cat("The maximal difference between the two cdf's for n = 10 is: ", res_m_difference)
 ```
 
-**Next, proceed with all the remaining steps**
+##### for n = 50
 
-**Do not forget to include several sentences summarizing your work and the conclusions you have made!**
+```{r}
+res <- comparison(20, 1e3, 50)
+res_m_difference <- maximal_difference(res$sample_means, res$mu, res$sigma)
+cat("The maximal difference between the two cdf's for n = 50 is: ", res_m_difference)
+```
+
+**We can see that with bigger number of n the difference between cumulative distribution functions becomes smaller and so the maximal difference. Hence the Central Limit theorem holds true.**
+
+#### Subtask 2
+
+a) to be added
 
 ------------------------------------------------------------------------
 
@@ -380,13 +417,59 @@ To answer this,
 2.  What are the expected value and variance of X? Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ to calculate the values of sample mean $\overline{\mathbf{X}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(x_i - \overline{x})^{2}}}{n-1}$. Comment on the results;
 
     ```{r}
-    # YOUR CODE HERE
+    tosses <- 3
+    p <- 0.5 # coin is fair
+    n <- 100
+
+    # binomial distribution
+    X <- rbinom(N, size = tosses, prob = p)
+      
+    # expectation of binomial distribution: E(X) = n*p
+    E_x <- tosses * p
+    # variance of binomial distribution: Var(X) = np*(1-p)
+    Var_x <- tosses * 0.25
+
+    sample_mean <- mean(X)
+    sample_variance <- sum((X - sample_mean)^2)/(n - 1)
+
+    cat("Expectation of binomial distribution of X: ", E_x, "\n")
+    cat("Mean of binomial distribution of X on data: ", sample_mean, "\n\n")
+
+
+    cat("Variance of binomial distribution of X: ", Var_x, "\n")
+    cat("Sample variance of binomial distribution of X on data: ", sample_variance, "\n")
+
     ```
 
 3.  What are the expected value and variance of Y? Simulate realizations $y_1,y_2,\dots,y_{100}$ of $Y$ to calculate the values of sample mean $\overline{\mathbf{Y}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(y_i - \overline{y})^{2}}}{n-1}$. Comment on the results;
 
     ```{r}
-    # YOUR CODE HERE
+    tosses <- 3
+    p <- 0.5 # coin is fair
+    n <- 100
+
+    # binomial distribution of X
+    X <- rbinom(N, size = tosses, prob = p)
+
+    # distribution of Y
+    Y <- 0.5 * X - 1
+
+    # expectation of Y
+    E_y <- 0.5 * E_x - 1
+    # variance of Y
+    Var_y <- 0.25 * Var_x
+
+
+    sample_mean_y <- mean(Y)
+    sample_variance_y <- sum((Y - sample_mean_y)^2)/(n - 1)
+
+    cat("Expectation of binomial distribution of Y: ", E_y, "\n")
+    cat("Mean of binomial distribution of Y on data: ", sample_mean_y, "\n\n")
+
+
+    cat("Variance of binomial distribution of Y: ", Var_y, "\n")
+    cat("Sample variance of binomial distribution of Y on data: ", sample_variance_y, "\n")
+
     ```
 
 **Do not forget to include several sentences summarizing your work and the conclusions you have made!**
