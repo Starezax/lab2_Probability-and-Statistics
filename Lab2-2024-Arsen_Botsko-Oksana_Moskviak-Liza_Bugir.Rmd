@@ -155,7 +155,7 @@ c(estimate = p_hat, ci_lower = lower_bound, ci_upper = upper_bound, se = sd)
 
 ```{r}
 epsilon <- 0.03
-var <-0.25
+var <- 0.25
 N_needed <- ceiling((z/epsilon)^2 * var)
 
 N_needed
@@ -304,53 +304,90 @@ curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
 
 **This task consists of two parts:**
 
-1.  **In this part, we discuss independence of random variables and its moments: expectation and variance.**
+#### 1. **In this part, we discuss independence of random variables and its moments: expectation and variance.**
 
-    1.  Suppose we have a random variable $X$. Explain why $\mathbb{E}(\frac{1}{X}) \neq \frac{1}{\mathbb{E(X)}}$;
+1.  Suppose we have a random variable $X$. Explain why $\mathbb{E}(\frac{1}{X}) \neq \frac{1}{\mathbb{E(X)}}$;
 
-    2.  Let $X \sim \mathscr{N}(\mu,\sigma^2)$ with $\mu = teamidnumber$ and $\sigma^{2} = 2\times teamidnumber+7$. Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ and $y_1,y_2,\dots,y_{100}$ of $Y := \frac{1}{X}$ to calculate the values of $\frac{1}{\overline{\textbf{X}}}$ and $\overline{\textbf{Y}}$. Comment on the received results;
+2.  Let $X \sim \mathscr{N}(\mu,\sigma^2)$ with $\mu = teamidnumber$ and $\sigma^{2} = 2\times teamidnumber+7$. Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ and $y_1,y_2,\dots,y_{100}$ of $Y := \frac{1}{X}$ to calculate the values of $\frac{1}{\overline{\textbf{X}}}$ and $\overline{\textbf{Y}}$. Comment on the received results;
 
-        ```{r}
-        mu <- 0 #change this!
-        sigma <- 1 #change this
-        N <- 100
+    ```{r}
+    mu <- 0 #change this!
+    sigma <- 1 #change this
+    N <- 100
 
-        # YOUR CODE HERE
-        ```
+    # YOUR CODE HERE
+    ```
 
-    3.  Let $X$ and $Y$ be exponentially distributed r.v.'s with parameter $\lambda = 2$. Set $Z := \log{X} + 5$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Y$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Z$. Explain the results. Comment on the difference of relations between the pairs of random variables. Which pair of r.v.'s is dependent and which one is similar?
+3.  Let $X$ and $Y$ be exponentially distributed r.v.'s with parameter $\lambda = 2$. Set $Z := \log{X} + 5$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Y$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Z$. Explain the results. Comment on the difference of relations between the pairs of random variables. Which pair of r.v.'s is dependent and which one is similar?
 
-        ```{r}
-        # YOUR CODE HERE
-        ```
+    ```{r}
+    set.seed(10)
+    X <- rexp(100, rate = 2)
+    Y <- rexp(100, rate = 2)
 
-    ------------------------------------------------------------------------
+    Z <- log(X) + 5
 
-2.  You toss a fair coin three times and a random variable $X$ records how many times the coin shows Heads. You convince your friend that they should play a game with the following payoff: every round (equivalent to three coin tosses) will cost £$1$. They will receive £$0.5$ for every coin showing Heads. What is the expected value and the variance of the random variable $Y := 0.5X-1$?
+    qqplot(X, Y,
+           main = "Quantile-Quantile plot of X and Y",
+           xlab = "X",
+           ylab = "Y",
+           pch = 19, col = "blue")
 
-    To answer this,
+    plot(X, Y,
+         main = "Scatterplot of X and Y",
+         xlab = "X",
+         ylab = "Y",
+         pch = 19, col = rgb(0, 0, 1, 0.4))
 
-    1.  Explain what type of random variable is X:
+    qqplot(X, Z,
+           main = "Quantile-Quantile plot of X and Z",
+           xlab = "X",
+           ylab = "Y",
+           pch = 19, col = "blue")
 
-        -   Normally distributed
+    plot(X, Z,
+         main = "Scatterplot of X and Z",
+         xlab = "X",
+         ylab = "Y",
+         pch = 19, col = rgb(0, 0, 1, 0.4))
 
-        -   Binomially distributed
+    ```
 
-        -   Poisson distributed
+The Quantile-Quantile and scatterplots of X and Y show that both variables have the same exponential distribution but are independent. The points in the scatterplot are spread randomly, meaning X and Y are not related.
 
-        -   Uniformly distributed
+The plots of X and Z show a clear curved pattern. This means that Z depends on X. The relation is not random but fully determined.
 
-    2.  What are the expected value and variance of X? Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ to calculate the values of sample mean $\overline{\mathbf{X}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(x_i - \overline{x})^{2}}}{n-1}$. Comment on the results;
+So, X and Y are similar but independent, while X and Z are dependent.
 
-        ```{r}
-        # YOUR CODE HERE
-        ```
+#### 2. You toss a fair coin three times and a random variable $X$ records how many times the coin shows Heads. You convince your friend that they should play a game with the following payoff: every round (equivalent to three coin tosses) will cost £$1$. They will receive £$0.5$ for every coin showing Heads. What is the expected value and the variance of the random variable $Y := 0.5X-1$?
 
-    3.  What are the expected value and variance of Y? Simulate realizations $y_1,y_2,\dots,y_{100}$ of $Y$ to calculate the values of sample mean $\overline{\mathbf{Y}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(y_i - \overline{y})^{2}}}{n-1}$. Comment on the results;
+To answer this,
 
-        ```{r}
-        # YOUR CODE HERE
-        ```
+1.  Explain what type of random variable is X:
+
+    -   Normally distributed
+
+    -   Binomially distributed
+
+    -   Poisson distributed
+
+    -   Uniformly distributed
+
+        **Explanation:**
+
+        **Random variable X is Binomially distributed: B(n = 3, p = 0.5)**
+
+2.  What are the expected value and variance of X? Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ to calculate the values of sample mean $\overline{\mathbf{X}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(x_i - \overline{x})^{2}}}{n-1}$. Comment on the results;
+
+    ```{r}
+    # YOUR CODE HERE
+    ```
+
+3.  What are the expected value and variance of Y? Simulate realizations $y_1,y_2,\dots,y_{100}$ of $Y$ to calculate the values of sample mean $\overline{\mathbf{Y}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(y_i - \overline{y})^{2}}}{n-1}$. Comment on the results;
+
+    ```{r}
+    # YOUR CODE HERE
+    ```
 
 **Do not forget to include several sentences summarizing your work and the conclusions you have made!**
 
