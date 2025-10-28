@@ -333,7 +333,51 @@ cat("The maximal difference between the two cdf's for n = 50 is: ", res_m_differ
 
 #### Subtask 2
 
-a) to be added
+a)  Express the event of interest in terms of the r.v. S := X1 +···+ X100;
+
+    The variable of an event of interest has Gamma distribution (sum of independent identically exponentially distributed variables) with parameter 100 and ν. The number of clicks in one minute should not exceed 100, therefore our event S should last longer than or equal to 1 minute. The probability of it lasting longer or equal is P(S≥1) ≥ 0.95 (by the given condition).
+
+b)  Obtain the theoretical bounds on N using the Markov inequality, Chernoff bound and Central Limit Theorem and compare the results;
+
+    The bounds are derived considering the probability of it lasting longer or equal is P(S ≥ 1) ≥ 0.95
+
+    Bound of N derived using the Markov inequality: 0.2475
+
+```{r}
+markov_res <- 4.95 / (id + 10)
+chernoff_res <- 77.5 / (id + 10)
+clt_res <- 83.55 / (id + 10)
+
+bounds <- c(markov_res, chernoff_res, clt_res)
+```
+
+```{r}
+n  <- 100
+
+for (b in bounds){
+  nu <- (id + 10) * b
+  S <- sum(rexp(n, rate = nu))
+  cat("Sum for bound", b, "is:", S, "\n")
+}
+
+```
+```{r}
+n  <- 100
+k <- 5000
+
+
+for (b in bounds) {
+  nu <- (id + 10) * b
+  S_vals <- replicate(k, sum(rexp(n, rate = nu)))
+  probability <- mean(S_vals >= 1)
+  res_satisfies <- probability >= 0.95
+  cat("For bound", b, 
+      " -> P(S ≥ 1):", probability, ", satisfies the condition: ", res_satisfies, "\n")
+}
+
+```
+
+
 
 ------------------------------------------------------------------------
 
@@ -412,7 +456,7 @@ To answer this,
 
         **Explanation:**
 
-        **Random variable X is Binomially distributed: B(n = 3, p = 0.5)**
+        **Random variable X is Binomially distributed: B(n = 3, p = 0.5), because the experiment was repeated 3 times and each outcome was independent. Probability of favourable is equal to 0.5, because the coin is fair.**
 
 2.  What are the expected value and variance of X? Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ to calculate the values of sample mean $\overline{\mathbf{X}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(x_i - \overline{x})^{2}}}{n-1}$. Comment on the results;
 
@@ -440,6 +484,8 @@ To answer this,
     cat("Sample variance of binomial distribution of X on data: ", sample_variance, "\n")
 
     ```
+
+**Here we can see that theoretically provided values of expectation and variance are very close to the values on real data, hence the theory holds true.**
 
 3.  What are the expected value and variance of Y? Simulate realizations $y_1,y_2,\dots,y_{100}$ of $Y$ to calculate the values of sample mean $\overline{\mathbf{Y}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(y_i - \overline{y})^{2}}}{n-1}$. Comment on the results;
 
@@ -472,7 +518,7 @@ To answer this,
 
     ```
 
-**Do not forget to include several sentences summarizing your work and the conclusions you have made!**
+**In this part we can also see that theoretically provided values of expectation and variance are very close to the values on real data, hence the theory holds true.**
 
 ------------------------------------------------------------------------
 
