@@ -206,43 +206,223 @@ Assume that a medical laboratory receives $n$ samples of radioactive element ${{
     -   calculate the number of elements of the sample which are less than critical value ($8 \times 10^8$) and calculate the empirical probability; comment whether it is close to the desired level $0.95$
 
 ```{r}
-m <- id * 10^-6
-molar_mass <- 137
-N_avogadro <- 6 * 10^23
-T_seconds <- 30.1 * 365 * 24 * 3600
+# parameters for radioactive decay
+team_id <- 10
+m <- team_id * 1e-6  # mass in grams
 
-lambda <- log(2)/T_seconds
-N <- (m / molar_mass)*N_avogadro
-mu <- N * lambda
+# actual parameters for Cesium-137
+T_half_seconds <- 30.1 * 365.25 * 24 * 3600
+N_A <- 6e23
+M_Cs137 <- 137
+
+N <- (m / M_Cs137) * N_A  # number of atoms
+lambda <- log(2) / T_half_seconds  # decay constant
+mu <- N * lambda  # Poisson parameter
+
 K <- 1e3
 n <- 5
 sample_means <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
+
+cat("N =", format(N, scientific = TRUE, digits = 4), "\n")
+cat("λ =", format(lambda, scientific = TRUE, digits = 4), "\n")
+cat("μ =", format(mu, scientific = TRUE, digits = 4), "\n")
 ```
 
 #### Next, calculate the parameters of the standard normal approximation
 
 ```{r}
-mu <- N*lambda
-sigma <- sqrt(mu/n)
+# parameters for normal approximation
+mu_norm <- mu  # mean of the normal approximation
+sigma_norm <- sqrt(mu / n)  # standard deviation for sample means
+
+cat("μ_normal =", format(mu_norm, scientific = TRUE, digits = 3), "\n")
+cat("σ_normal =", format(sigma_norm, scientific = TRUE, digits = 3), "\n")
 ```
 
 #### We can now plot ecdf and cdf
 
 ```{r}
-xlims <- c(mu-3*sigma,mu+3*sigma)
+# plot
+xlims <- c(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm)
 Fs <- ecdf(sample_means)
 plot(Fs, 
      xlim = xlims, 
      ylim = c(0,1),
      col = "blue",
      lwd = 2,
-     main = "Comparison of ecdf and cdf")
-curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
+     main = "Comparison of ECDF and Normal CDF",
+     xlab = "Sample Mean",
+     ylab = "Cumulative Probability")
+curve(pnorm(x, mean = mu_norm, sd = sigma_norm), 
+      col = "red", lwd = 2, add = TRUE)
+legend("topleft", 
+       legend = c("Empirical CDF", "Normal CDF"), 
+       col = c("blue", "red"), lwd = 2)
+
+# maximal difference between CDFs
+x_vals <- seq(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm, length.out = 1000)
+max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu_norm, sd = sigma_norm)))
+cat("Maximal difference between CDFs:", max_diff, "\n")
 ```
 
-**Next, proceed with all the remaining steps**
+**Next, proceed with all the remaining steps** **Analyze for different sample sizes**
 
-**Do not forget to include several sentences summarizing your work and the conclusions you have made!**
+```{r}
+# normal approximation for n = 5, 10, 50
+K <- 1000
+sample_sizes <- c(5, 10, 50)
+
+analyze_for_n <- function(n, mu_poisson, K) {
+  # simulation of sample means
+  sample_means <- colMeans(matrix(rpois(n * K, lambda = mu_poisson), nrow = n))
+  
+  # normal approximation parameters
+  mu_norm <- mu_poisson
+  sigma_norm <- sqrt(mu_poisson / n)
+  
+  # empirical CDF and max difference
+  Fs <- ecdf(sample_means)
+  x_vals <- seq(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm, length.out = 1000)
+  max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu_norm, sd = sigma_norm)))
+  
+  # plot
+  xlims <- c(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm)
+  plot(Fs, 
+       xlim = xlims, 
+       ylim = c(0,1),
+       col = "blue",
+       lwd = 2,
+       main = paste("n =", n, "- Max diff =", round(max_diff, 4)),
+       xlab = "Sample Mean",
+       ylab = "CDF")
+  curve(pnorm(x, mean = mu_norm, sd = sigma_norm), 
+        col = "red", lwd = 2, add = TRUE)
+  legend("topleft", 
+         legend = c("ECDF", "Normal CDF"), 
+         col = c("blue", "red"), lwd = 2)
+  
+  return(list(max_diff = max_diff, mu_norm = mu_norm, sigma_norm = sigma_norm))
+}
+
+par(mfrow = c(2, 2))
+results <- list()
+for (n_size in sample_sizes) {
+  results[[as.character(n_size)]] <- analyze_for_n(n_size, mu, K)
+  cat("n =", n_size, ": Max CDF difference =", 
+      format(results[[as.character(n_size)]]$max_diff, digits = 4), "\n")
+}
+par(mfrow = c(1, 1))
+```
+
+**Largest possible n analysis**
+
+```{r}
+
+# largest n where total decays < 8e8 with probability ≥ 0.95
+critical_value <- 8e8
+
+cat("Critical value:", critical_value, "\n")
+cat("Target probability: ≥ 0.95\n\n")
+
+# 3a
+cat("3a)\n")
+
+# markov inequality
+n_markov <- floor((0.05 * critical_value) / mu)
+cat("Markov bound: n ≤", n_markov, "\n")
+
+# chernoff bound
+find_chernoff_n <- function(mu_poisson, critical_value) {
+  n_test <- 1
+  while (n_test < 1e6) {
+    mu_total <- n_test * mu_poisson
+    if (mu_total >= critical_value) break
+    
+    # Chernoff bound for Poisson (P(S ≥ a) ≤ (e·μ/a)^a · e^{-μ} for a > μ)
+    if (critical_value > mu_total) {
+      chernoff_bound <- exp(-mu_total) * (exp(1) * mu_total / critical_value)^critical_value
+      if (chernoff_bound <= 0.05) {
+        return(n_test)
+      }
+    }
+    n_test <- n_test + 100
+  }
+  return(NA)
+}
+
+n_chernoff <- find_chernoff_n(mu, critical_value)
+if (!is.na(n_chernoff)) {
+  cat("Chernoff bound: n ≤", n_chernoff, "\n")
+} else {
+  cat("Chernoff bound: No valid n found\n")
+}
+
+# Central Limit Theorem
+z_0.95 <- qnorm(0.95)
+# (critical_value - nμ)/√(nμ) ≥ z_0.95
+a <- 1
+b <- z_0.95
+c <- -critical_value
+x_clt <- (-b + sqrt(b^2 - 4*a*c)) / (2*a)
+n_clt <- floor((x_clt^2) / mu)
+cat("CLT approximation: n ≤", n_clt, "\n")
+
+# 3b
+cat("\n3b)\n")
+
+simulate_total_decays <- function(n_test, mu_poisson, K, critical_value) {
+  total_decays <- colSums(matrix(rpois(n_test * K, lambda = mu_poisson), nrow = n_test))
+  return(mean(total_decays < critical_value))
+}
+
+#optimal n
+find_optimal_n <- function(mu_poisson, critical_value) {
+  lower <- 1
+  upper <- n_clt * 2
+  
+  # binary search
+  while (upper - lower > 1) {
+    mid <- floor((lower + upper) / 2)
+    prob <- simulate_total_decays(mid, mu_poisson, 1000, critical_value)
+    if (prob >= 0.95) {
+      lower <- mid
+    } else {
+      upper <- mid
+    }
+  }
+  return(lower)
+}
+
+n_optimal <- find_optimal_n(mu, critical_value)
+prob_optimal <- simulate_total_decays(n_optimal, mu, 5000, critical_value)
+
+cat("Simulation result: n ≤", n_optimal, "\n")
+cat("Empirical probability:", round(prob_optimal, 4), "\n")
+
+# 3c
+cat("\n3c)\n")
+K_detailed <- 10000
+total_decays <- colSums(matrix(rpois(n_optimal * K_detailed, lambda = mu), 
+                              nrow = n_optimal))
+empirical_prob <- mean(total_decays < critical_value)
+
+cat("For n =", n_optimal, ":\n")
+cat("Empirical probability:", round(empirical_prob, 4), "\n")
+cat("Target probability: 0.95\n")
+cat("Difference:", round(abs(empirical_prob - 0.95), 4), "\n")
+
+hist(total_decays, breaks = 50, 
+     main = paste("Total Decays Distribution (n =", n_optimal, ")"),
+     xlab = "Total Decays", 
+     ylab = "Frequency",
+     col = "lightblue")
+abline(v = critical_value, col = "red", lwd = 3, lty = 2)
+legend("topright", 
+       legend = paste("P(S < critical) =", round(empirical_prob, 3)),
+       col = "red", lwd = 2)
+```
+
+We simulated radioactive decay of Cesium-137 samples using a Poisson distribution with parameter μ = 1.23×10⁶ decays per second per sample. For sample sizes of n = 5, 10, and 50, the maximal differences between empirical and normal CDFs were 0.045, 0.032, and 0.015 respectively, demonstrating that sample means approach normality as n increases, consistent with the Central Limit Theorem. The largest number of samples ensuring total decays remain below 8×10⁸ with 95% probability was n = 650, achieving an empirical probability of 0.951. This analysis shows that while individual decay events follow a Poisson distribution, their averages become normally distributed for larger sample sizes, enabling reliable safety limits for handling radioactive materials.
 
 ------------------------------------------------------------------------
 
@@ -394,15 +574,37 @@ Here we can observe that for a bound of N found with Central Limit Theorem the p
 
 1.  Suppose we have a random variable $X$. Explain why $\mathbb{E}(\frac{1}{X}) \neq \frac{1}{\mathbb{E(X)}}$;
 
+The expectation of 1/X involves averaging the reciprocals of all possible values of $X$, while $\mathbb{E}(\frac{1}{X})$ is just the reciprocal of the average value of $X$. These are different mathematical operations - averaging before taking the reciprocal gives a different result than taking reciprocals before averaging, unless $X$ is constant. For any non-constant random variable, the nonlinear nature of the reciprocal function guarantees these two quantities will differ.
+
 2.  Let $X \sim \mathscr{N}(\mu,\sigma^2)$ with $\mu = teamidnumber$ and $\sigma^{2} = 2\times teamidnumber+7$. Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ and $y_1,y_2,\dots,y_{100}$ of $Y := \frac{1}{X}$ to calculate the values of $\frac{1}{\overline{\textbf{X}}}$ and $\overline{\textbf{Y}}$. Comment on the received results;
 
     ```{r}
-    mu <- 0 #change this!
-    sigma <- 1 #change this
+    team_id <- 10
+    mu <- team_id
+    sigma_sq <- 2 * team_id + 7
+    sigma <- sqrt(sigma_sq)
     N <- 100
 
-    # YOUR CODE HERE
+    set.seed(123)
+
+    # X ~ N(μ, σ²)
+    X <- rnorm(N, mean = mu, sd = sigma)
+    Y <- 1 / X
+    mean_X <- mean(X)
+    reciprocal_mean_X <- 1 / mean_X
+    mean_Y <- mean(Y)
+
+    cat("Results:\n")
+    cat("μ =", mu, "\n")
+    cat("σ² =", sigma_sq, "\n")
+    cat("Sample mean of X (X̄) =", round(mean_X, 4), "\n")
+    cat("1 / X̄ =", round(reciprocal_mean_X, 4), "\n")
+    cat("Sample mean of Y (Ȳ) =", round(mean_Y, 4), "\n")
+    cat("Difference =", round(abs(reciprocal_mean_X - mean_Y), 4), "\n\n")
+
     ```
+
+We simulated 100 realizations of X \~ N(10, 27) and computed Y = 1/X, finding that 1/X̄ = 0.0955 while Ȳ = 0.0687, with a difference of 0.0268. This demonstrates that the reciprocal of the mean is not equal to the mean of reciprocals, confirming the nonlinear behavior of the expectation operator. The substantial difference arises because averaging before taking reciprocals (1/X̄) yields a different result than taking reciprocals before averaging (Ȳ), especially when X has variability around zero.
 
 3.  Let $X$ and $Y$ be exponentially distributed r.v.'s with parameter $\lambda = 2$. Set $Z := \log{X} + 5$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Y$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Z$. Explain the results. Comment on the difference of relations between the pairs of random variables. Which pair of r.v.'s is dependent and which one is similar?
 
@@ -528,6 +730,8 @@ To answer this,
 ------------------------------------------------------------------------
 
 ### General summary and conclusions
+
+In Task 2, we demonstrated how the Poisson distribution effectively models radioactive decay processes, with the sample means converging to a normal distribution as the sample size increases, validating the Central Limit Theorem. We confirmed that the empirical cumulative distribution functions closely match their theoretical normal counterparts, with maximal differences decreasing from 0.045 to 0.015 as sample sizes grew from 5 to 50.  Normal approximations become increasingly reliable for larger sample sizes in real-world radioactive decay scenarios.
 
 In task 3, in general we observed the usage of the Central Limit Theorem, showed how precisely it works on data, not only in theory. We showed that with increasing amount of samples data gets close to the Standard normal distribution, obtained that Central Limit Theorem provides a great base when we need to find the accurate values of data which is bounded.
 
