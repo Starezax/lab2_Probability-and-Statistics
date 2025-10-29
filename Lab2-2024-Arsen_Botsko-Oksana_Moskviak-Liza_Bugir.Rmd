@@ -341,7 +341,11 @@ b)  Obtain the theoretical bounds on N using the Markov inequality, Chernoff bou
 
     The bounds are derived considering the probability of it lasting longer or equal is P(S ≥ 1) ≥ 0.95
 
-    Bound of N derived using the Markov inequality: 0.2475
+    -   Bound of N derived using the Markov inequality: 4.95/v.
+    -   Bound of N derived using the Chernoff bound: 77.5/v.
+    -   Bound of N derived using Central Limit Theorem: 83.55/v.
+
+    The most accurate bound is provided by Central Limit Theorem, and we can observe this below.
 
 ```{r}
 markov_res <- 4.95 / (id + 10)
@@ -361,6 +365,7 @@ for (b in bounds){
 }
 
 ```
+
 ```{r}
 n  <- 100
 k <- 5000
@@ -377,7 +382,7 @@ for (b in bounds) {
 
 ```
 
-
+Here we can observe that for a bound of N found with Central Limit Theorem the probability of P(S ≥ 1) is the most close to 0.95, hence it is the most accurate one. The probability given by the Markov's bound almost always gives the probability equals to 1, which is not exactly precise. The value obtained by Chernoff bound has better result, but still not close to the accuracy of Central Limit Theorem.
 
 ------------------------------------------------------------------------
 
@@ -456,7 +461,7 @@ To answer this,
 
         **Explanation:**
 
-        **Random variable X is Binomially distributed: B(n = 3, p = 0.5), because the experiment was repeated 3 times and each outcome was independent. Probability of favourable is equal to 0.5, because the coin is fair.**
+        **Random variable X is Binomially distributed: B(n = 3, p = 0.5), because the experiment was repeated 3 times and each outcome was independent. Probability of favorable is equal to 0.5, because the coin is fair.**
 
 2.  What are the expected value and variance of X? Simulate realizations $x_1,x_2,\dots,x_{100}$ of $X$ to calculate the values of sample mean $\overline{\mathbf{X}}$ and sample variance $s^2 = \frac{\sum_{i=1}^{n}{(x_i - \overline{x})^{2}}}{n-1}$. Comment on the results;
 
@@ -518,10 +523,14 @@ To answer this,
 
     ```
 
-**In this part we can also see that theoretically provided values of expectation and variance are very close to the values on real data, hence the theory holds true.**
+**In this part, we can also see that theoretically provided values of expectation and variance are very close to the values on real data, hence the theory holds true.**
 
 ------------------------------------------------------------------------
 
 ### General summary and conclusions
 
-Summarize here what you've done, whether you solved the tasks, what difficulties you had etc.
+In task 3, in general we observed the usage of the Central Limit Theorem, showed how precisely it works on data, not only in theory. We showed that with increasing amount of samples data gets close to the Standard normal distribution, obtained that Central Limit Theorem provides a great base when we need to find the accurate values of data which is bounded.
+
+In task 4, we worked with topics learned previously, such as data distribution and its properties, explored that the theoretical values provide almost precise result to the ones obtained on generated samples.
+
+While working on this laboratory work, our team explored the previously learned topic on real examples and learned the specifics of working with it.
