@@ -350,6 +350,12 @@ find_chernoff_n <- function(mu_poisson, critical_value) {
   return(NA)
 }
 
+n_chernoff <- find_chernoff_n(mu, critical_value)
+if (!is.na(n_chernoff)) {
+  cat("Chernoff bound: n ≤", n_chernoff, "\n")
+} else {
+  cat("Chernoff bound: No valid n found\n")
+}
 
 # Central Limit Theorem
 z_0.95 <- qnorm(0.95)
@@ -725,7 +731,7 @@ To answer this,
 
 ### General summary and conclusions
 
-In Task 2, we demonstrated how the Poisson distribution effectively models radioactive decay processes, with the sample means converging to a normal distribution as the sample size increases, validating the Central Limit Theorem. We confirmed that the empirical cumulative distribution functions closely match their theoretical normal counterparts, with maximal differences decreasing from 0.045 to 0.015 as sample sizes grew from 5 to 50.  Normal approximations become increasingly reliable for larger sample sizes in real-world radioactive decay scenarios.
+In Task 2, we demonstrated how the Poisson distribution effectively models radioactive decay processes, with the sample means converging to a normal distribution as the sample size increases, validating the Central Limit Theorem. We confirmed that the empirical cumulative distribution functions closely match their theoretical normal counterparts, with maximal differences decreasing from 0.045 to 0.015 as sample sizes grew from 5 to 50. Normal approximations become increasingly reliable for larger sample sizes in real-world radioactive decay scenarios.
 
 In task 3, in general we observed the usage of the Central Limit Theorem, showed how precisely it works on data, not only in theory. We showed that with increasing amount of samples data gets close to the Standard normal distribution, obtained that Central Limit Theorem provides a great base when we need to find the accurate values of data which is bounded.
 
