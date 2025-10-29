@@ -1,6 +1,6 @@
 ---
 title: 'P&S-2025: Lab assignment 2'
-author: "Arsen Botsko, Oksana Moskviak, Liza Buhir"
+author: "Arsen Botsko, Oksana Moskviak, Elizabeth Buhir"
 output:
   html_document:
     df_print: paged
