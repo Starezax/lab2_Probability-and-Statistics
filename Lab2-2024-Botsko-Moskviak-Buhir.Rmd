@@ -350,12 +350,6 @@ find_chernoff_n <- function(mu_poisson, critical_value) {
   return(NA)
 }
 
-n_chernoff <- find_chernoff_n(mu, critical_value)
-if (!is.na(n_chernoff)) {
-  cat("Chernoff bound: n ≤", n_chernoff, "\n")
-} else {
-  cat("Chernoff bound: No valid n found\n")
-}
 
 # Central Limit Theorem
 z_0.95 <- qnorm(0.95)
