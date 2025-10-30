@@ -207,44 +207,40 @@ Assume that a medical laboratory receives $n$ samples of radioactive element ${{
     -   calculate the number of elements of the sample which are less than critical value ($8 \times 10^8$) and calculate the empirical probability; comment whether it is close to the desired level $0.95$
 
 ```{r}
-# parameters for radioactive decay
 team_id <- 10
-m <- team_id * 1e-6  # mass in grams
+m <- team_id * 1e-6
 
-# actual parameters for Cesium-137
-T_half_seconds <- 30.1 * 365.25 * 24 * 3600
-N_A <- 6e23
-M_Cs137 <- 137
+T_half_seconds <- 30 * 365 * 24 * 3600
+N_A <- 6*10^23
+M <- 137
 
-N <- (m / M_Cs137) * N_A  # number of atoms
-lambda <- log(2) / T_half_seconds  # decay constant
-mu <- N * lambda  # Poisson parameter
+N <- (m / M) * N_A
+lambda <- log(2) / T_half_seconds
+mu <- N * lambda
 
 K <- 1e3
 n <- 5
 sample_means <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
 
 cat("N =", format(N, scientific = TRUE, digits = 4), "\n")
-cat("λ =", format(lambda, scientific = TRUE, digits = 4), "\n")
-cat("μ =", format(mu, scientific = TRUE, digits = 4), "\n")
+cat("lambda =", format(lambda, scientific = TRUE, digits = 4), "\n")
+cat("mu =", format(mu, scientific = TRUE, digits = 4), "\n")
 ```
 
 #### Next, calculate the parameters of the standard normal approximation
 
 ```{r}
-# parameters for normal approximation
-mu_norm <- mu  # mean of the normal approximation
-sigma_norm <- sqrt(mu / n)  # standard deviation for sample means
+mu <- N*lambda
+sigma <- sqrt(mu/n)
 
-cat("μ_normal =", format(mu_norm, scientific = TRUE, digits = 3), "\n")
-cat("σ_normal =", format(sigma_norm, scientific = TRUE, digits = 3), "\n")
+cat("mu =", format(mu, scientific = TRUE, digits = 3), "\n")
+cat("sigma =", format(sigma, scientific = TRUE, digits = 3), "\n")
 ```
 
 #### We can now plot ecdf and cdf
 
 ```{r}
-# plot
-xlims <- c(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm)
+xlims <- c(mu - 3*sigma, mu + 3*sigma)
 Fs <- ecdf(sample_means)
 plot(Fs, 
      xlim = xlims, 
@@ -254,40 +250,33 @@ plot(Fs,
      main = "Comparison of ECDF and Normal CDF",
      xlab = "Sample Mean",
      ylab = "Cumulative Probability")
-curve(pnorm(x, mean = mu_norm, sd = sigma_norm), 
+curve(pnorm(x, mean = mu, sd = sigma), 
       col = "red", lwd = 2, add = TRUE)
-legend("topleft", 
-       legend = c("Empirical CDF", "Normal CDF"), 
-       col = c("blue", "red"), lwd = 2)
 
-# maximal difference between CDFs
-x_vals <- seq(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm, length.out = 1000)
-max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu_norm, sd = sigma_norm)))
+
+
+x_vals <- seq(mu - 3*sigma, mu + 3*sigma, length.out = 1000)
+max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu, sd = sigma)))
 cat("Maximal difference between CDFs:", max_diff, "\n")
 ```
 
 **Next, proceed with all the remaining steps** **Analyze for different sample sizes**
 
 ```{r}
-# normal approximation for n = 5, 10, 50
 K <- 1000
 sample_sizes <- c(5, 10, 50)
 
 analyze_for_n <- function(n, mu_poisson, K) {
-  # simulation of sample means
   sample_means <- colMeans(matrix(rpois(n * K, lambda = mu_poisson), nrow = n))
-  
-  # normal approximation parameters
-  mu_norm <- mu_poisson
-  sigma_norm <- sqrt(mu_poisson / n)
-  
-  # empirical CDF and max difference
+
+  mu<- mu_poisson
+  sigma <- sqrt(mu_poisson / n)
+
   Fs <- ecdf(sample_means)
-  x_vals <- seq(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm, length.out = 1000)
-  max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu_norm, sd = sigma_norm)))
-  
-  # plot
-  xlims <- c(mu_norm - 3*sigma_norm, mu_norm + 3*sigma_norm)
+  x_vals <- seq(mu - 3*sigma, mu + 3*sigma, length.out = 1000)
+  max_diff <- max(abs(Fs(x_vals) - pnorm(x_vals, mean = mu, sd = sigma)))
+
+  xlims <- c(mu - 3*sigma, mu + 3*sigma)
   plot(Fs, 
        xlim = xlims, 
        ylim = c(0,1),
@@ -296,13 +285,13 @@ analyze_for_n <- function(n, mu_poisson, K) {
        main = paste("n =", n, "- Max diff =", round(max_diff, 4)),
        xlab = "Sample Mean",
        ylab = "CDF")
-  curve(pnorm(x, mean = mu_norm, sd = sigma_norm), 
+  curve(pnorm(x, mean = mu, sd = sigma), 
         col = "red", lwd = 2, add = TRUE)
   legend("topleft", 
          legend = c("ECDF", "Normal CDF"), 
          col = c("blue", "red"), lwd = 2)
   
-  return(list(max_diff = max_diff, mu_norm = mu_norm, sigma_norm = sigma_norm))
+  return(list(max_diff = max_diff, mu = mu, sigma = sigma))
 }
 
 par(mfrow = c(2, 2))
@@ -319,27 +308,23 @@ par(mfrow = c(1, 1))
 
 ```{r}
 
-# largest n where total decays < 8e8 with probability ≥ 0.95
 critical_value <- 8e8
 
 cat("Critical value:", critical_value, "\n")
-cat("Target probability: ≥ 0.95\n\n")
+cat("Target probability: >= 0.95\n\n")
 
-# 3a
 cat("3a)\n")
 
-# markov inequality
 n_markov <- floor((0.05 * critical_value) / mu)
-cat("Markov bound: n ≤", n_markov, "\n")
+cat("Markov bound: n <=", n_markov, "\n")
 
-# chernoff bound
+
 find_chernoff_n <- function(mu_poisson, critical_value) {
   n_test <- 1
   while (n_test < 1e6) {
     mu_total <- n_test * mu_poisson
     if (mu_total >= critical_value) break
-    
-    # Chernoff bound for Poisson (P(S ≥ a) ≤ (e·μ/a)^a · e^{-μ} for a > μ)
+
     if (critical_value > mu_total) {
       chernoff_bound <- exp(-mu_total) * (exp(1) * mu_total / critical_value)^critical_value
       if (chernoff_bound <= 0.05) {
@@ -353,22 +338,19 @@ find_chernoff_n <- function(mu_poisson, critical_value) {
 
 n_chernoff <- find_chernoff_n(mu, critical_value)
 if (!is.na(n_chernoff)) {
-  cat("Chernoff bound: n ≤", n_chernoff, "\n")
+  cat("Chernoff bound: n <=", n_chernoff, "\n")
 } else {
   cat("Chernoff bound: No valid n found\n")
 }
 
-# Central Limit Theorem
 z_0.95 <- qnorm(0.95)
-# (critical_value - nμ)/√(nμ) ≥ z_0.95
 a <- 1
 b <- z_0.95
 c <- -critical_value
 x_clt <- (-b + sqrt(b^2 - 4*a*c)) / (2*a)
 n_clt <- floor((x_clt^2) / mu)
-cat("CLT approximation: n ≤", n_clt, "\n")
+cat("CLT approximation: n <=", n_clt, "\n")
 
-# 3b
 cat("\n3b)\n")
 
 simulate_total_decays <- function(n_test, mu_poisson, K, critical_value) {
@@ -376,12 +358,10 @@ simulate_total_decays <- function(n_test, mu_poisson, K, critical_value) {
   return(mean(total_decays < critical_value))
 }
 
-#optimal n
 find_optimal_n <- function(mu_poisson, critical_value) {
   lower <- 1
   upper <- n_clt * 2
-  
-  # binary search
+
   while (upper - lower > 1) {
     mid <- floor((lower + upper) / 2)
     prob <- simulate_total_decays(mid, mu_poisson, 1000, critical_value)
@@ -397,10 +377,9 @@ find_optimal_n <- function(mu_poisson, critical_value) {
 n_optimal <- find_optimal_n(mu, critical_value)
 prob_optimal <- simulate_total_decays(n_optimal, mu, 5000, critical_value)
 
-cat("Simulation result: n ≤", n_optimal, "\n")
+cat("Simulation result: n <=", n_optimal, "\n")
 cat("Empirical probability:", round(prob_optimal, 4), "\n")
 
-# 3c
 cat("\n3c)\n")
 K_detailed <- 10000
 total_decays <- colSums(matrix(rpois(n_optimal * K_detailed, lambda = mu), 
@@ -450,15 +429,13 @@ We simulated radioactive decay of Cesium-137 samples using a Poisson distributio
 
 ```{r}
 
-comparison <- function(nu1 = 20, K = 1e3, n = 5){
-  # First, generate samples an sample means:
+comparison <- function(nu1 = 20, K = 1e3, n = 5)
+  {
   sample_means <- colMeans(matrix(rexp(n*K, rate = nu1), nrow=n))
-  
-  # Next, calculate the parameters of the standard normal approximation
+
   mu <- 1/nu1     
   sigma <- 1/ (nu1 * sqrt(n))   
-  
-  # We can now plot ecdf and cdf
+
   xlims <- c(mu-3*sigma,mu+3*sigma)
   Fs <- ecdf(sample_means)
   plot(Fs, 
@@ -558,7 +535,7 @@ for (b in bounds) {
   probability <- mean(S_vals >= 1)
   res_satisfies <- probability >= 0.95
   cat("For bound", b, 
-      " -> P(S ≥ 1):", probability, ", satisfies the condition: ", res_satisfies, "\n")
+      " -> P(S >= 1):", probability, ", satisfies the condition: ", res_satisfies, "\n")
 }
 
 ```
@@ -586,22 +563,21 @@ The expectation of 1/X involves averaging the reciprocals of all possible values
     sigma <- sqrt(sigma_sq)
     N <- 100
 
-    set.seed(123)
+    set.seed(id)
 
-    # X ~ N(μ, σ²)
     X <- rnorm(N, mean = mu, sd = sigma)
     Y <- 1 / X
     mean_X <- mean(X)
-    reciprocal_mean_X <- 1 / mean_X
+    inv_mean<- 1 / mean_X
     mean_Y <- mean(Y)
 
     cat("Results:\n")
-    cat("μ =", mu, "\n")
-    cat("σ² =", sigma_sq, "\n")
-    cat("Sample mean of X (X̄) =", round(mean_X, 4), "\n")
-    cat("1 / X̄ =", round(reciprocal_mean_X, 4), "\n")
-    cat("Sample mean of Y (Ȳ) =", round(mean_Y, 4), "\n")
-    cat("Difference =", round(abs(reciprocal_mean_X - mean_Y), 4), "\n\n")
+    cat("mu =", mu, "\n")
+    cat("sigma squarred =", sigma_sq, "\n")
+    cat("Sample mean of X =", round(mean_X, 4), "\n")
+    cat("1 / sample_mean =", round(inv_mean, 4), "\n")
+    cat("Sample mean of Y =", round(mean_Y, 4), "\n")
+    cat("Difference =", round(abs(inv_mean - mean_Y), 4), "\n\n")
 
     ```
 
@@ -610,7 +586,7 @@ We simulated 100 realizations of X \~ N(10, 27) and computed Y = 1/X, finding th
 3.  Let $X$ and $Y$ be exponentially distributed r.v.'s with parameter $\lambda = 2$. Set $Z := \log{X} + 5$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Y$. Plot the Quantile-Quantile plot and scatterplot of $X$ and $Z$. Explain the results. Comment on the difference of relations between the pairs of random variables. Which pair of r.v.'s is dependent and which one is similar?
 
     ```{r}
-    set.seed(10)
+    set.seed(id)
     X <- rexp(100, rate = 2)
     Y <- rexp(100, rate = 2)
 
@@ -670,15 +646,13 @@ To answer this,
 
     ```{r}
     tosses <- 3
-    p <- 0.5 # coin is fair
+    p <- 0.5
     n <- 100
 
-    # binomial distribution
     X <- rbinom(N, size = tosses, prob = p)
-      
-    # expectation of binomial distribution: E(X) = n*p
+
     E_x <- tosses * p
-    # variance of binomial distribution: Var(X) = np*(1-p)
+
     Var_x <- tosses * 0.25
 
     sample_mean <- mean(X)
@@ -699,18 +673,15 @@ To answer this,
 
     ```{r}
     tosses <- 3
-    p <- 0.5 # coin is fair
+    p <- 0.5
     n <- 100
 
-    # binomial distribution of X
     X <- rbinom(N, size = tosses, prob = p)
 
-    # distribution of Y
     Y <- 0.5 * X - 1
 
-    # expectation of Y
     E_y <- 0.5 * E_x - 1
-    # variance of Y
+
     Var_y <- 0.25 * Var_x
 
 
@@ -741,3 +712,11 @@ In task 3, in general we observed the usage of the Central Limit Theorem, showed
 In task 4, we worked with topics learned previously, such as data distribution and its properties, explored that the theoretical values provide almost precise result to the ones obtained on generated samples.
 
 While working on this laboratory work, our team explored the previously learned topic on real examples and learned the specifics of working with it.
+
+### Work breakdown
+
+Arsen Botsko: Task 1, Task 4 subtask 1 part 3, Task 4 subtask 2 part 1
+
+Elizabeth Buhir: Task 2, Task 4 subtask 1 part 1, Task 4 subtask 1 part 2
+
+Oksana Moskviak: Task 3, Task 4 subtask 2 part 2, Task 4 subtask 2 part 3
