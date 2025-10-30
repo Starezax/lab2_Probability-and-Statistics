@@ -145,18 +145,19 @@ p_hat
 ```{r}
 sd <- sqrt(p_hat * (1 - p_hat) / N)
 
-z <- qnorm(0.975)
+#VIA CHEBYSHEV!!!
+k <- sqrt(1/(1-0.95))
 
-lower_bound <- p_hat - z * sd
-upper_bound <- p_hat + z * sd
+lower_bound <- p_hat - k * sd
+upper_bound <- p_hat + k * sd
 
-c(estimate = p_hat, ci_lower = lower_bound, ci_upper = upper_bound, se = sd)
+c(estimate = p_hat, ci_lower = lower_bound, ci_upper = upper_bound, se = sd, k = k)
 ```
 
 ```{r}
 epsilon <- 0.03
 var <- 0.25
-N_needed <- ceiling((z/epsilon)^2 * var)
+N_needed <- ceiling((k/epsilon)^2 * var)
 
 N_needed
 ```
@@ -180,7 +181,7 @@ table(k_sample) / N
 
 ```
 
-**We simulated the transmission of 4-bit messages using the [7,4] Hamming code with a bit error probability of 0.1. Out of 100 messages, the estimated probability of correct transmission was 0.81, with a 95% confidence interval of [0.73, 0.88]. This shows that while the Hamming code improves reliability by correcting single-bit errors, some messages still fail when multiple bits are corrupted. The histogram of bit errors matches the expected Binomial(4, 0.1) distribution.**
+**We simulated the transmission of 4-bit messages using the [7,4] Hamming code with a bit error probability of 0.1. Out of 100 messages, the estimated probability of correct transmission was 0.81, with a 95% confidence interval of [0.63, 0.99]. This shows that while the Hamming code improves reliability by correcting single-bit errors, some messages still fail when multiple bits are corrupted.**
 
 ------------------------------------------------------------------------
 
@@ -730,6 +731,8 @@ To answer this,
 ------------------------------------------------------------------------
 
 ### General summary and conclusions
+
+In Task 1, we analyzed the reliability of the [7,4] Hamming code using simulation. By encoding random binary messages, introducing random bit-flip errors with probability 0.1​, and decoding them with single-error correction, we estimated the probability of successful transmission​. Using the k-sigma rule, we built an interval for the true success probability and determined the number of trials required to keep the estimation error in a given bound.
 
 In Task 2, we demonstrated how the Poisson distribution effectively models radioactive decay processes, with the sample means converging to a normal distribution as the sample size increases, validating the Central Limit Theorem. We confirmed that the empirical cumulative distribution functions closely match their theoretical normal counterparts, with maximal differences decreasing from 0.045 to 0.015 as sample sizes grew from 5 to 50. Normal approximations become increasingly reliable for larger sample sizes in real-world radioactive decay scenarios.
 
